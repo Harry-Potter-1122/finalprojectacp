@@ -1,24 +1,21 @@
 public class Device {
     private String name;
     private double watts;
-    private double hours;
+    private double hoursPerDay;
 
-    public Device(String name, double watts, double hours) {
+    public Device(String name, double watts, double hoursPerDay) {
         this.name = name;
         this.watts = watts;
-        this.hours = hours;
+        this.hoursPerDay = hoursPerDay;
     }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getName() {
+        return name;
+    }
 
-    public double getWatts() { return watts; }
-    public void setWatts(double watts) { this.watts = watts; }
-
-    public double getHours() { return hours; }
-    public void setHours(double hours) { this.hours = hours; }
-
-    public double monthlyKwh() {
-        return (watts * hours * 30) / 1000.0;
+    public double getMonthlyBill() {
+        double kWh = (watts * hoursPerDay * 30) / 1000.0;
+        double rate = 30; // PKR per kWh
+        return kWh * rate;
     }
 }

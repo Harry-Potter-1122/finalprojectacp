@@ -1,79 +1,158 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 public class Screen {
 
-    // ---------- Home Screen ----------
-    public static JPanel homeScreen() {
-        JPanel panel = new JPanel(new BorderLayout());
-        JLabel title = new JLabel("🏠 Home Screen", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 20));
-        panel.add(title, BorderLayout.NORTH);
+    // ---------- MAIN HOME SCREEN ----------
+    public static class HomeScreen extends JFrame {
 
-        DefaultListModel<String> homeListModel = new DefaultListModel<>();
-        JList<String> homeList = new JList<>(homeListModel);
-        JScrollPane scrollPane = new JScrollPane(homeList);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        ArrayList<Home> homes = new ArrayList<>();
+        JPanel listPanel;
 
-        JPanel buttonPanel = new JPanel();
-        JButton addHomeBtn = new JButton("Add Home");
-        JButton deleteHomeBtn = new JButton("Delete Home");
-        buttonPanel.add(addHomeBtn);
-        buttonPanel.add(deleteHomeBtn);
-        panel.add(buttonPanel, BorderLayout.SOUTH);
+        public HomeScreen() {
+            setTitle("Homes");
+            setSize(350, 400);
+            setLayout(new BorderLayout());
 
-        return panel;
+            listPanel = new JPanel();
+            listPanel.setLayout(new GridLayout(0, 1));
+
+            JButton addHomeBtn = new JButton("Add Home");
+            addHomeBtn.addActionListener(e -> new AddHomeScreen(this));
+
+            add(addHomeBtn, BorderLayout.NORTH);
+            add(new JScrollPane(listPanel), BorderLayout.CENTER);
+
+            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            setVisible(true);
+        }
+
+        public void refreshList() {
+            listPanel.removeAll();
+
+            for (Home home : homes) {
+                JButton btn = new JButton(home.getName());
+                btn.addActionListener(e -> new HomeDetailScreen(home));
+                listPanel.add(btn);
+            }
+
+            listPanel.revalidate();
+            listPanel.repaint();
+        }
     }
 
-    // ---------- Device Screen ----------
-    public static JPanel deviceScreen() {
-        JPanel panel = new JPanel(new BorderLayout());
-        JLabel title = new JLabel("⚡ Device Screen", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 20));
-        panel.add(title, BorderLayout.NORTH);
+    // ---------- ADD HOME SCREEN ----------
+    public static class AddHomeScreen extends JFrame {
+        public AddHomeScreen(HomeScreen parent) {
+            setTitle("Add Home");
+            setSize(300, 150);
+            setLayout(new FlowLayout());
 
-        DefaultListModel<String> deviceListModel = new DefaultListModel<>();
-        JList<String> deviceList = new JList<>(deviceListModel);
-        JScrollPane scrollPane = new JScrollPane(deviceList);
-        panel.add(scrollPane, BorderLayout.CENTER);
+            JLabel label = new JLabel("Home Name:");
+            JTextField text = new JTextField(15);
+            JButton save = new JButton("Save");
 
-        JPanel bottomPanel = new JPanel(new GridLayout(2, 1));
+            save.addActionListener(e -> {
+                parent.homes.add(new Home(text.getText()));
+                parent.refreshList();
+                dispose();
+            });
 
-        JPanel inputPanel = new JPanel(new GridLayout(3, 2, 5, 5));
-        inputPanel.add(new JLabel("Device Name:"));
-        inputPanel.add(new JTextField());
-        inputPanel.add(new JLabel("Power (Watts):"));
-        inputPanel.add(new JTextField());
-        inputPanel.add(new JLabel("Hours per Day:"));
-        inputPanel.add(new JTextField());
+            add(label);
+            add(text);
+            add(save);
 
-        JPanel buttonPanel = new JPanel();
-        JButton addDeviceBtn = new JButton("Add Device");
-        JButton deleteDeviceBtn = new JButton("Delete Device");
-        buttonPanel.add(addDeviceBtn);
-        buttonPanel.add(deleteDeviceBtn);
-
-        bottomPanel.add(inputPanel);
-        bottomPanel.add(buttonPanel);
-
-        panel.add(bottomPanel, BorderLayout.SOUTH);
-        return panel;
+            setVisible(true);
+        }
     }
 
-    // ---------- Settings Screen ----------
-    public static JPanel settingsScreen() {
-        JPanel panel = new JPanel(new BorderLayout());
-        JLabel title = new JLabel("⚙️ Settings Screen", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 20));
-        panel.add(title, BorderLayout.NORTH);
+    // ---------- HOME DETAIL SCREEN ----------
+    public static class HomeDetailScreen extends JFrame {
 
-        JPanel content = new JPanel(new GridLayout(3, 1, 10, 10));
-        content.add(new JLabel("Electricity Rate (Rs. per kWh):", SwingConstants.CENTER));
-        content.add(new JTextField("30"));
-        JButton saveBtn = new JButton("Save Rate");
-        content.add(saveBtn);
+        ArrayList<Device> devices = new ArrayList<>();
+        JPanel devicePanel;
+        Home home;
 
-        panel.add(content, BorderLayout.CENTER);
-        return panel;
+        public HomeDetailScreen(Home home) {
+            this.home = home;
+
+            setTitle("Home: " + home.getName());
+            setSize(350, 400);
+            setLayout(new BorderLayout());
+
+            JButton addDeviceBtn = new JButton("Add Device");
+            addDeviceBtn.addActionListener(e -> new AddDeviceScreen(this));
+
+            JButton calcBtn = new JButton("Calculate Monthly Bill");
+            calcBtn.addActionListener(e -> showBill());
+
+            JPanel topPanel = new JPanel(new FlowLayout());
+            topPanel.add(addDeviceBtn);
+            topPanel.add(calcBtn);
+
+            devicePanel = new JPanel();
+            devicePanel.setLayout(new GridLayout(0, 1));
+
+            add(topPanel, BorderLayout.NORTH);
+            add(new JScrollPane(devicePanel), BorderLayout.CENTER);
+
+            setVisible(true);
+        }
+
+        public void refreshDevices() {
+            devicePanel.removeAll();
+            for (Device d : devices) {
+                devicePanel.add(new JLabel(d.getName()));
+            }
+            devicePanel.revalidate();
+            devicePanel.repaint();
+        }
+
+        public void showBill() {
+            double total = 0;
+            for (Device d : devices) total += d.getMonthlyBill();
+
+            JOptionPane.showMessageDialog(this,
+                    "Total Monthly Bill: " + total + " PKR",
+                    "Bill",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    // ---------- ADD DEVICE SCREEN ----------
+    public static class AddDeviceScreen extends JFrame {
+        public AddDeviceScreen(HomeDetailScreen parent) {
+            setTitle("Add Device");
+            setSize(300, 200);
+            setLayout(new GridLayout(4, 2));
+
+            JLabel nameL = new JLabel("Device Name:");
+            JTextField name = new JTextField();
+
+            JLabel wattL = new JLabel("Watts:");
+            JTextField watt = new JTextField();
+
+            JLabel hourL = new JLabel("Hours/day:");
+            JTextField hours = new JTextField();
+
+            JButton save = new JButton("Save");
+            save.addActionListener(e -> {
+                parent.devices.add(new Device(
+                        name.getText(),
+                        Double.parseDouble(watt.getText()),
+                        Double.parseDouble(hours.getText())
+                ));
+                parent.refreshDevices();
+                dispose();
+            });
+
+            add(nameL); add(name);
+            add(wattL); add(watt);
+            add(hourL); add(hours);
+            add(new JLabel()); add(save);
+
+            setVisible(true);
+        }
     }
 }
